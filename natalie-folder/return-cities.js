@@ -15,6 +15,7 @@ var cityResults = [
     {
         resultNum: 0,
         location: "" ,
+        state: "",
         lat: "",
         lng: ""
     }
@@ -53,6 +54,11 @@ function googleGeoCode(){
                 returnedCity = response.results[i].formatted_address;
                 returnedLat = response.results[i].geometry.location.lat;
                 returnedLng = response.results[i].geometry.location.lng;
+
+//  Need to collect the country & ensure entering US country
+                //Could check the last 3 chars of the formatted_address?
+                //ex:   "formatted_address": "Atlanta, GA, USA",
+
                 function addResult(resultNum, location, lat, lng){
                     cityResults.push({resultNum, location, lat, lng})
                 };
@@ -236,7 +242,7 @@ $("#search-area").on("click", function(event) {
 });
 
 //when the user selects one of the cities returned
-$(document).on("click", "div", setDestination);
+$(document).on("click", ".destinationBox", setDestination);
 
 //////////////////////////////////////////////////////////////
 ////////////////////////END EVENTS////////////////////////////
