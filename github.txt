@@ -1,0 +1,5 @@
+git add
+git commit
+git checkout master branch
+git pull (to pull updates)
+then push back to the master
