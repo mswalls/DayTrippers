@@ -91,4 +91,9 @@ function getBoundingBox(centerPoint, distance) {
 
     getBoundingBox([lat,lng],300);
 
+    //maxLat = Northern boundary
+    //minLat = Southern boundary
+    //maxLon = Eastern boundary
+    //minLon = Western boundary
+
     // http://api.geonames.org/citiesJSON?north=36.44395688601068&south=31.054033913989322&east=-77.38003110725805&west=-83.86342889274196&lang=de&username=nmanderson314

@@ -3,6 +3,16 @@ body{
 
 }
 
-.search{
-    
+#top-ten{
+    flex-wrap: wrap;
+    margin: 20px;
+    text-align: center;
 }
+
+/* .destinationCities{
+    margin: 15px;
+} */
+/* 
+.card.is-3{
+    width: 20%;
+} */

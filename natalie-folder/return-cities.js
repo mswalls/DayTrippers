@@ -1,3 +1,26 @@
+//////////////////////////////////////////////////////////////
+//////////////////////BEGIN FIREBASE//////////////////////////
+//////////////////////////////////////////////////////////////
+
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyDrbAOcXQwc3wrl38mfUUr5FFIZGy_ctjo",
+    authDomain: "daytrippin-26a14.firebaseapp.com",
+    databaseURL: "https://daytrippin-26a14.firebaseio.com",
+    projectId: "daytrippin-26a14",
+    storageBucket: "daytrippin-26a14.appspot.com",
+    messagingSenderId: "869251076265"
+  };
+  firebase.initializeApp(config);
+
+
+//////////////////////////////////////////////////////////////
+//////////////////////END FIREBASE////////////////////////////
+//////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////
+//////////////////////BEGIN VARIABLES///////////////////////////
+//////////////////////////////////////////////////////////////
 //get nearby cities
 //  1. Take the city entered
 //      -https://maps.googleapis.com/maps/api/geocode/json?address=atlanta&key=AIzaSyBPY1-NPGowiZS7Qh8AlOaUVeNnwWxtjVQ
@@ -8,9 +31,11 @@
 //      http://api.geonames.org/citiesJSON?north=36.44395688601068&south=31.054033913989322&east=-77.38003110725805&west=-83.86342889274196&lang=de&username=nmanderson314
 //  4. store the list of cities for use and display
 //
+var database = firebase.database();
 
 var city;
 var distance=0;
+var distanceInput=0;
 var cityResults = [
     {
         resultNum: 0,
@@ -27,6 +52,8 @@ var north, south, east, west;
 
 //this is the final destination selected by the user
 var destination;
+var destinationLat;
+var destinationLng;
 
 //////////////////////////////////////////////////////////////
 //////////////////////END VARIABLES///////////////////////////
@@ -36,6 +63,13 @@ var destination;
 //////////////////////////////////////////////////////////////
 //////////////////////BEGIN FUNCTIONS/////////////////////////
 //////////////////////////////////////////////////////////////
+function miToKmConvert(){
+    // 1 mi, mi(Int) = 1.609344 km
+    // 15 mi, mi(Int) = 15 × 1.609344 km = 24.14016 km
+    distance = distanceInput * 1.609344
+
+}
+
 
 function googleGeoCode(){
     var queryURL = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + city + '&key=AIzaSyBPY1-NPGowiZS7Qh8AlOaUVeNnwWxtjVQ'
@@ -170,7 +204,7 @@ function getBoundingBox(centerPoint, distance) {
 };
 
 function geonamesCities(){
-    var queryURL = 'http://api.geonames.org/citiesJSON?north='+north+'&south='+south+'&east='+east+'&west='+west+'&lang=de&username=nmanderson314&maxRows=11';
+    var queryURL = 'http://api.geonames.org/citiesJSON?north='+north+'&south='+south+'&east='+east+'&west='+west+'&lang=de&username=nmanderson314&maxRows=7';
     console.log(queryURL);
 
     $.ajax({
@@ -186,10 +220,14 @@ function geonamesCities(){
             //for each city returned, create a box
             for (var i = 0; i < response.geonames.length;i++){
                 var destinationOption = response.geonames[i].name;
+                var selectedLat = response.geonames[i].lat;
+                var selectedLng = response.geonames[i].lng;
+                // console.log(selectedLat,selectedLng);
                 //omit the city that was originally searched
                 if(city.toUpperCase() != destinationOption.toUpperCase()){             
                     //create a box object for each city returned
-                    $("#top-ten").append("<div class='destinationCities' cityName='" + destinationOption + "'>" + destinationOption + "<div><br>");
+                    $("#top-ten").append("<div class='card column is-4 destinationCities'><div class='card-header-title is-centered' lat = '"+selectedLat+"' lng = '"+selectedLng+"'  cityName='" + destinationOption + "'>"+ destinationOption + "</div></div>");
+
                 };
             }
         }
@@ -199,10 +237,156 @@ function geonamesCities(){
 function setDestination(){
     var destinationBox = $(this);
     destination = destinationBox.attr("cityName");
+    destinationLat = destinationBox.attr("lat");
+    destinationLng = destinationBox.attr("lng");
     console.log(destination);
+
+    // CALL js of all other team members
+    eventbrite();
+    zomato();
+    weather();
+
+    //show results
+    $("#results-page").show();
+
+
 }
+
+//////////////////////NAKELL FUNCTION/////////////////////////
+
+function zomato(){
+    var cities = {
+      "async": true,
+      "crossDomain": true,
+      "url": "https://developers.zomato.com/api/v2.1/cities?" + destinationLat +"&"+ destinationLng,
+      "method": "GET",
+      "headers": {
+        "user-key": "c7288644a7a1a0bb320b8e22c80479c6",
+      }
+    }
+    
+    $.ajax(cities).done(function (response) {
+     // console.log(response);
+      var cityID = response.location_suggestions[0].id;
+      var restuarant = {
+        "async": true,
+        "crossDomain": true,
+        "url": `https://developers.zomato.com/api/v2.1/search?entity_id=${cityID}&entity_type=city&count=10&sort=rating&order=desc`,
+        "method": "GET",
+        "headers": {
+          "user-key": "c7288644a7a1a0bb320b8e22c80479c6"
+        }
+      }
+      
+      $.ajax(restuarant).done(function (response) {
+        console.log(response.restaurants);
+        var list=response.restaurants;
+        list.forEach(element => {
+          console.log(element.restaurant.name)
+    
+          $(".table > tbody").append("<tr><td>" +  element.restaurant.name+ "</td><td>" + element.restaurant.location.address + "</td><td>"  + element.restaurant.cuisines );
+        });
+    
+      });
+    });
+};
+//////////////////////END: NAKELL FUNCTION/////////////////////////
+
+//////////////////////NATASHA FUNCTION/////////////////////////
+
+function eventbrite () {
+    var token = "&token=7RI4EOUJ2KE4ZQYMVVTZ";
+    var queryURL = "https://www.eventbriteapi.com/v3/events/search/?location.address=charlotte" + token;
+
+    $.ajax({
+        url: queryURL,
+        method: "GET"
+    }).then(function(response) {
+
+        console.log(response.events);
+        var categories = response.events[i].category_id;
+        if (categories != "101", "112" ) {
+            for (i=0; i < 10; i++) {
+                var eventName = response.events[i].name.text;
+                console.log(eventName);
+                var eventStart = response.events[i].start.local;
+                console.log(moment(eventStart).format("llll"));
+                console.log(eventStart);
+                var eventEnd = response.events[i].end.local; //convert military time
+                console.log(eventEnd);
+                var eventDesc = response.events[i].description.text;
+                console.log(v.prune(eventDesc, 150));
+                var uRl = response.events[i].url;
+                console.log(uRl);
+                var elink = $("<a href=" + uRl +">Click</a>");
+                console.log(elink);
+            $("#body").append("<tr><td>" + "<a href=" + uRl +">" + eventName + "</a>" + "<td>" + moment(eventStart).format("llll") + " - " + moment(eventEnd).format("llll") + "<td>" +v.prune(eventDesc, 150));
+            //   $("<a>" + elink )
+               
+                console.log(categories);
+                if (categories == "103", "101") {
+                    response.events[i].hide();
+                }
+            }
+        }
+    });
+}
+
+        
+//////////////////////END: NATASHA FUNCTION/////////////////////////
+
+//////////////////////MATT FUNCTION/////////////////////////
+function weather() {
+    // var destinationLat = 36.0726355 
+    // var destinationLng = -79.7919754
+    var weatherAPI = "=86e077f1801044c6bf8210536181308";
+    var queryURL = "http://api.apixu.com/v1/forecast.json?key" + weatherAPI + "&q=" + destinationLat + "," + destinationLng + "&days=3";
+
+    $.ajax({
+      url: queryURL,
+      method: "GET"
+    })
+    .then(function (response) {
+        console.log(queryURL);
+        console.log(response);
+
+        $("#date1").append("<h1>" + response.forecast.forecastday[0].date + "</h1>");
+        $("#tempmin1").append(response.forecast.forecastday[0].day.mintemp_f);
+        $("#tempmax1").append(response.forecast.forecastday[0].day.maxtemp_f);
+        $("#condition1").append(response.forecast.forecastday[0].day.condition.text);
+        $("#humidity1").append(response.forecast.forecastday[0].day.avghumidity + "%");
+        
+        $("#date2").append(response.forecast.forecastday[1].date);
+        $("#tempmin2").append(response.forecast.forecastday[1].day.mintemp_f);
+        $("#tempmax2").append(response.forecast.forecastday[1].day.maxtemp_f);
+        $("#condition2").append(response.forecast.forecastday[1].day.condition.text);
+        $("#humidity2").append(response.forecast.forecastday[1].day.avghumidity + "%");
+
+        $("#date3").append(response.forecast.forecastday[2].date);
+        $("#tempmin3").append(response.forecast.forecastday[2].day.mintemp_f);
+        $("#tempmax3").append(response.forecast.forecastday[2].day.maxtemp_f);
+        $("#condition3").append(response.forecast.forecastday[2].day.condition.text);
+        $("#humidity3").append(response.forecast.forecastday[2].day.avghumidity + "%");
+        
+        $("#date1").append("");
+        reminder();
+      });
+
+
+  var dayonemintemp = response.forecast.forecastday[0].day.mintemp_f;
+  function reminder() {
+    if (dayonemintemp < 80) {
+      $("#message1").append("Don't Forget a jacket!");
+     } else {
+      $("#message1").append("Don't forget your sunglasses!");
+     };
+    };
+};
+//////////////////////END: MATT FUNCTION/////////////////////////
+
+
 //////////////////////////////////////////////////////////////
-//////////////////////BEGIN FUNCTIONS/////////////////////////
+//////////////////////END FUNCTIONS/////////////////////////
 //////////////////////////////////////////////////////////////
 
 
@@ -211,38 +395,65 @@ function setDestination(){
 //////////////////////BEGIN EVENTS////////////////////////////
 //////////////////////////////////////////////////////////////
 
+// Hide results section on page load
+$("#results-page").hide();
+
+
 $("#search-area").on("click", function(event) {
     event.preventDefault();
     city = $("#city-input").val().trim();
-    distance = parseInt($("#distance-input").val().trim());
-    if(city !='' && distance > 0){
+    distanceInput = parseInt($("#distance-input").val().trim());
+    console.log("Distance (mi)" + distanceInput);
+    
+    if(city !='' && distanceInput > 0){
         $("#possible-results").empty();
-        //convert distance from miles to km - set list of selected ranges because some of the search apis only accept up to 400km
-        if (distance == 50){
-            distance = 81;
-        }
-        else if (distance == 100){
-            distance = 161;
-        }
-        else if (distance == 150){
-            distance = 242;
-        }
-        else{
-            distance = 322;
-        };
-        console.log(city);
-        googleGeoCode();
-    }
+        $(".destinationCard").empty();
 
+        //convert distance from miles to km - set list of selected ranges because some of the search apis only accept up to 400km
+        miToKmConvert();
+        // if (distance == 50){
+        //     distance = 81;
+        // }
+        // else if (distance == 100){
+        //     distance = 161;
+        // }
+        // else if (distance == 150){
+        //     distance = 242;
+        // }
+        // else{
+        //     distance = 322;
+        // };
+        console.log(city);
+        console.log("Distance (km)" + distance);
+        googleGeoCode();
+
+        //add to firebase
+        database.ref().push({
+            city: city,
+            distance: distanceInput, 
+        });
+
+    }
     else {
         $("#possible-results").empty();
+        $(".destinationCard").empty();
         $("#possible-results").append("Please enter required information.");
     }
-
 });
 
+
+//////////////////////////////////////////////////////////////
+////////////////////////FIREBASE PULL/////////////////////////
+//////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////
+////////////////////////END: FIREBASE PULL////////////////////
+//////////////////////////////////////////////////////////////
+
+
+
 //when the user selects one of the cities returned
-$(document).on("click", ".destinationBox", setDestination);
+$(document).on("click", ".destinationCities", setDestination);
 
 //////////////////////////////////////////////////////////////
 ////////////////////////END EVENTS////////////////////////////
